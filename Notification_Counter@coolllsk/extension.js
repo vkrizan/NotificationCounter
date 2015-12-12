@@ -13,8 +13,9 @@ const MessageCounterIndicator = new Lang.Class({
     Name: 'MessageCounterIndicator',
 
     _init: function() {
-        this.actor = new St.Label({ text: ' ➓', visible: false, y_expand: true,
-                                    y_align: Clutter.ActorAlign.CENTER });
+        this.actor = new St.Label({ text: '➓', visible: false, y_expand: true,
+                                    y_align: Clutter.ActorAlign.CENTER,
+                                    style_class: 'count-label'});
 
         this._sources = [];
 
@@ -44,38 +45,37 @@ const MessageCounterIndicator = new Lang.Class({
             function(source) {
                 count += source.count;
             }));
-        //count += Main.messageTray.queueCount;
 
         switch (count) {
             case 1:
-                label = ' ➊';
+                label = '➊';
                 break;
             case 2:
-                label = ' ➋';
+                label = '➋';
                 break;
             case 3:
-                label = ' ➌';
+                label = '➌';
                 break;
             case 4:
-                label = ' ➍';
+                label = '➍';
                 break;
             case 5:
-                label = ' ➎';
+                label = '➎';
                 break;
             case 6:
-                label = ' ➏';
+                label = '➏';
                 break;
             case 7:
-                label = ' ➐';
+                label = '➐';
                 break;
             case 8:
-                label = ' ➑';
+                label = '➑';
                 break;
             case 9:
-                label = ' ➒';
+                label = '➒';
                 break;
             default:
-                label = ' ➓';
+                label = '➓';
         }
         this.actor.text = label;
 
