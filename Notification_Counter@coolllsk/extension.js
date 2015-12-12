@@ -5,6 +5,7 @@ const Main = imports.ui.main;
 const Lang = imports.lang;
 const MessagesIndicator = imports.ui.dateMenu.MessagesIndicator;
 const IndicatorPad = imports.ui.dateMenu.IndicatorPad;
+const Urgency = imports.ui.messageTray.Urgency;
 
 const MessageCounterIndicator = new Lang.Class({
     /*
@@ -43,7 +44,13 @@ const MessageCounterIndicator = new Lang.Class({
         let label;
         this._sources.forEach(Lang.bind(this,
             function(source) {
-                count += source.count;
+                for (let i=0; i < source.notifications.length; i++) {
+                    let notification = source.notifications[i];
+                    if (notification.urgency >= Urgency.NORMAL) {
+                        // increment counter
+                        count++;
+                    }
+                }
             }));
 
         switch (count) {
