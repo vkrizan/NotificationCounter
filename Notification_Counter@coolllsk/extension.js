@@ -14,7 +14,7 @@ const MessageCounterIndicator = new Lang.Class({
     Name: 'MessageCounterIndicator',
 
     _init: function() {
-        this.actor = new St.Label({ text: '➓', visible: false, y_expand: true,
+        this.actor = new St.Label({ visible: false, y_expand: true,
                                     y_align: Clutter.ActorAlign.CENTER,
                                     style_class: 'count-label'});
 
