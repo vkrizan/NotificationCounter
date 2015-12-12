@@ -53,37 +53,13 @@ const MessageCounterIndicator = new Lang.Class({
                 }
             }));
 
-        switch (count) {
-            case 1:
-                label = '➊';
-                break;
-            case 2:
-                label = '➋';
-                break;
-            case 3:
-                label = '➌';
-                break;
-            case 4:
-                label = '➍';
-                break;
-            case 5:
-                label = '➎';
-                break;
-            case 6:
-                label = '➏';
-                break;
-            case 7:
-                label = '➐';
-                break;
-            case 8:
-                label = '➑';
-                break;
-            case 9:
-                label = '➒';
-                break;
-            default:
-                label = '➓';
+        if (count > 10) {
+            // Limit count
+            count = 10;
         }
+
+        // Create unicode character based on count (➊ .. ➓)
+        label = String.fromCharCode(0x2789 + count)
         this.actor.text = label;
 
         this.actor.visible = (count > 0);
