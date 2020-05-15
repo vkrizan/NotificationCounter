@@ -1,45 +1,49 @@
 
+const GObject = imports.gi.GObject;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const Lang = imports.lang;
 const MessagesIndicator = imports.ui.dateMenu.MessagesIndicator;
-const IndicatorPad = imports.ui.dateMenu.IndicatorPad;
 const Urgency = imports.ui.messageTray.Urgency;
 
-const MessageCounterIndicator = new Lang.Class({
+var MessageCounterIndicator = GObject.registerClass(
+class MessageCounterIndicator extends St.Label {
     /*
      * See also ui.dateMenu.MessagesIndicator
      */
-    Name: 'MessageCounterIndicator',
 
-    _init: function() {
-        this.actor = new St.Label({ visible: false, y_expand: true,
-                                    y_align: Clutter.ActorAlign.CENTER,
-                                    style_class: 'count-label'});
+    _init() {
+        super._init({
+            visible: false,
+            y_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'count-label'
+        });
 
         this._sources = [];
+        this._signals = [];
 
-        Main.messageTray.connect('source-added', Lang.bind(this, this._onSourceAdded));
-        Main.messageTray.connect('source-removed', Lang.bind(this, this._onSourceRemoved));
-        Main.messageTray.connect('queue-changed', Lang.bind(this, this._updateCount));
+        this._connectSignal(Main.messageTray, 'source-added', this._onSourceAdded.bind(this));
+        this._connectSignal(Main.messageTray, 'source-removed', this._onSourceRemoved.bind(this));
+        this._connectSignal(Main.messageTray, 'queue-changed', this._updateCount.bind(this));
 
         let sources = Main.messageTray.getSources();
         sources.forEach(Lang.bind(this, function(source) { this._onSourceAdded(null, source); }));
-    },
+    }
 
-    _onSourceAdded: function(tray, source) {
-        source.connect('count-updated', Lang.bind(this, this._updateCount));
+    _onSourceAdded(tray, source) {
+        this._connectSignal(source, 'notify::count', this._updateCount.bind(this));
         this._sources.push(source);
         this._updateCount();
-    },
+    }
 
-    _onSourceRemoved: function(tray, source) {
+    _onSourceRemoved(tray, source) {
         this._sources.splice(this._sources.indexOf(source), 1);
         this._updateCount();
-    },
+    }
 
-    _updateCount: function() {
+    _updateCount() {
         let count = 0;
         let label;
         this._sources.forEach(Lang.bind(this,
@@ -60,54 +64,69 @@ const MessageCounterIndicator = new Lang.Class({
 
         // Create unicode character based on count (➊ .. ➓)
         label = String.fromCharCode(0x2789 + count)
-        this.actor.text = label;
+        this.text = label;
+        this.visible = (count > 0);
+    }
 
-        this.actor.visible = (count > 0);
+    _connectSignal(target, signal, callback) {
+        let s = target.connect(signal, callback);
+        this._signals.push([target, s])
+    }
 
+    destroy() {
+        this._signals.forEach( (sig) => sig[0].disconnect(sig[1]) );
+        super.destroy();
     }
 });
 
 
-let count_indicator, orig_indicator, dateMenu;
+let count_indicator, orig_indicator, orig_pad, dateMenu;
 
 function init() {
 }
 
 function enable() {
-
     dateMenu = Main.panel.statusArea.dateMenu;
-    let dateMenuLayout = dateMenu.actor.get_children()[0];
+    let dateMenuLayout = dateMenu.get_children()[0];
     let actors = dateMenuLayout.get_children();
-
+    orig_pad = actors[0];
     orig_indicator = dateMenu._indicator;
 
+    // remove sizing constraint for original indicator
+    orig_pad.remove_constraint(orig_pad.get_constraints()[0])
+
     // Remove original indicator
-    dateMenuLayout.remove_actor(orig_indicator.actor);
-    //orig_indicator.actor.destroy();
+    dateMenuLayout.remove_child(orig_indicator)
 
-    // Remove IndicatorPad padding
-    dateMenuLayout.remove_actor(actors[0]);
-
-    // Add new indicator
+    // Create new indicator
     count_indicator = new MessageCounterIndicator();
     dateMenu._indicator = count_indicator;
-    dateMenuLayout.insert_child_at_index(new IndicatorPad(count_indicator.actor), 0);
-    dateMenuLayout.add_actor(count_indicator.actor);
+
+    // Add it with constraint
+    count_indicator.bind_property('visible', orig_pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
+    orig_pad.add_constraint(new Clutter.BindConstraint({
+        source: count_indicator,
+        coordinate: Clutter.BindCoordinate.SIZE,
+    }));
+    dateMenuLayout.add_child(count_indicator);
 
 }
 
 function disable() {
-    let dateMenuLayout = dateMenu.actor.get_children()[0];
-    let actors = dateMenuLayout.get_children();
+    let dateMenuLayout = dateMenu.get_children()[0];
 
-    dateMenuLayout.remove_actor(count_indicator.actor);
+    // Remove
+    dateMenuLayout.remove_child(count_indicator);
+    count_indicator.destroy()
 
-    // Remove IndicatorPad padding
-    dateMenuLayout.remove_actor(actors[0]);
-    actors[0].destroy();
-
-    // Re-add original indicator
+    // Add original indicator
+    dateMenuLayout.add_child(orig_indicator);
     dateMenu._indicator = orig_indicator;
-    dateMenuLayout.insert_child_at_index(new IndicatorPad(orig_indicator.actor), 0);
-    dateMenuLayout.add_actor(orig_indicator.actor);
+
+    // add the constraint back
+    orig_pad.remove_constraint(orig_pad.get_constraints()[0])
+    orig_pad.add_constraint(new Clutter.BindConstraint({
+        source: orig_indicator,
+        coordinate: Clutter.BindCoordinate.SIZE,
+    }));
 }
