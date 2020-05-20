@@ -21,7 +21,7 @@ class MessageCounterIndicator extends St.Label {
             style_class: 'count-label'
         });
 
-        this._sources = [];
+        this._sources = new Map();
         this._signals = [];
 
         this._connectSignal(Main.messageTray, 'source-added', this._onSourceAdded.bind(this));
@@ -30,23 +30,30 @@ class MessageCounterIndicator extends St.Label {
 
         let sources = Main.messageTray.getSources();
         sources.forEach(Lang.bind(this, function(source) { this._onSourceAdded(null, source); }));
+
+        this.connect('destroy', this._onDestroy.bind(this));
     }
 
     _onSourceAdded(tray, source) {
-        this._connectSignal(source, 'notify::count', this._updateCount.bind(this));
-        this._sources.push(source);
+        let sourceSignal = source.connect('notify::count', this._updateCount.bind(this));
+        this._sources.set(source, sourceSignal);
         this._updateCount();
     }
 
     _onSourceRemoved(tray, source) {
-        this._sources.splice(this._sources.indexOf(source), 1);
+        source.disconnect(this._sources.get(source));
+        this._sources.delete(source);
         this._updateCount();
+    }
+
+    _getSources() {
+        return [...this._sources.keys()];
     }
 
     _updateCount() {
         let count = 0;
         let label;
-        this._sources.forEach(Lang.bind(this,
+        this._getSources().forEach(Lang.bind(this,
             function(source) {
                 for (let i=0; i < source.notifications.length; i++) {
                     let notification = source.notifications[i];
@@ -73,10 +80,11 @@ class MessageCounterIndicator extends St.Label {
         this._signals.push([target, s])
     }
 
-    destroy() {
+    _onDestroy() {
         this._signals.forEach( (sig) => sig[0].disconnect(sig[1]) );
-        super.destroy();
+        this._sources.forEach( (sig, source) => source.disconnect(sig) );
     }
+
 });
 
 
