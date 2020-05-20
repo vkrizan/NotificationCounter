@@ -30,6 +30,8 @@ class MessageCounterIndicator extends St.Label {
 
         let sources = Main.messageTray.getSources();
         sources.forEach(Lang.bind(this, function(source) { this._onSourceAdded(null, source); }));
+
+        this.connect('destroy', (actor) => actor._signals.forEach( (sig) => sig[0].disconnect(sig[1]) ));
     }
 
     _onSourceAdded(tray, source) {
@@ -71,11 +73,6 @@ class MessageCounterIndicator extends St.Label {
     _connectSignal(target, signal, callback) {
         let s = target.connect(signal, callback);
         this._signals.push([target, s])
-    }
-
-    destroy() {
-        this._signals.forEach( (sig) => sig[0].disconnect(sig[1]) );
-        super.destroy();
     }
 });
 
