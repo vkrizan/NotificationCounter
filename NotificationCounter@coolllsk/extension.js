@@ -80,7 +80,7 @@ class MessageCounterIndicator extends St.Label {
 });
 
 
-let count_indicator, orig_indicator, orig_pad, dateMenu;
+let count_indicator, orig_indicator, dateMenu;
 
 function init() {
 }
@@ -89,11 +89,12 @@ function enable() {
     dateMenu = Main.panel.statusArea.dateMenu;
     let dateMenuLayout = dateMenu.get_children()[0];
     let actors = dateMenuLayout.get_children();
-    orig_pad = actors[0];
+    let orig_pad = actors[0];
     orig_indicator = dateMenu._indicator;
 
-    // remove sizing constraint for original indicator
-    orig_pad.remove_constraint(orig_pad.get_constraints()[0])
+    // Remove original pad
+    dateMenuLayout.remove_child(orig_pad);
+    orig_pad.destroy();
 
     // Remove original indicator
     dateMenuLayout.remove_child(orig_indicator)
@@ -102,31 +103,41 @@ function enable() {
     count_indicator = new MessageCounterIndicator();
     dateMenu._indicator = count_indicator;
 
-    // Add it with constraint
-    count_indicator.bind_property('visible', orig_pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
-    orig_pad.add_constraint(new Clutter.BindConstraint({
+    // Add it with pad and constraint
+    // Have to create a new one, to unbind with original pad.
+    let pad = new St.Widget();
+    count_indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
+    pad.add_constraint(new Clutter.BindConstraint({
         source: count_indicator,
         coordinate: Clutter.BindCoordinate.SIZE,
     }));
-    dateMenuLayout.add_child(count_indicator);
 
+    dateMenuLayout.add_child(count_indicator);
+    dateMenuLayout.add_child(pad);
+    dateMenuLayout.set_child_at_index(pad, 0);
 }
 
 function disable() {
     let dateMenuLayout = dateMenu.get_children()[0];
+    let old_pad = dateMenuLayout.get_children()[0];
 
     // Remove
+    dateMenuLayout.remove_child(old_pad);
     dateMenuLayout.remove_child(count_indicator);
+    old_pad.destroy();
     count_indicator.destroy()
 
     // Add original indicator
     dateMenuLayout.add_child(orig_indicator);
     dateMenu._indicator = orig_indicator;
 
-    // add the constraint back
-    orig_pad.remove_constraint(orig_pad.get_constraints()[0])
-    orig_pad.add_constraint(new Clutter.BindConstraint({
+    // add the pad and constraint back
+    let pad = new St.Widget();
+    dateMenu._indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
+    pad.add_constraint(new Clutter.BindConstraint({
         source: orig_indicator,
         coordinate: Clutter.BindCoordinate.SIZE,
     }));
+    dateMenuLayout.add_child(pad);
+    dateMenuLayout.set_child_at_index(pad, 0);
 }
