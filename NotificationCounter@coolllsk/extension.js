@@ -70,14 +70,14 @@ class MessageCounterIndicator extends St.Label {
         }
 
         // Create unicode character based on count (➊ .. ➓)
-        label = String.fromCharCode(0x2789 + count)
+        label = String.fromCharCode(0x2789 + count);
         this.text = label;
         this.visible = (count > 0);
     }
 
     _connectSignal(target, signal, callback) {
         let s = target.connect(signal, callback);
-        this._signals.push([target, s])
+        this._signals.push([target, s]);
     }
 
     _onDestroy() {
@@ -105,7 +105,7 @@ function enable() {
     orig_pad.destroy();
 
     // Remove original indicator
-    dateMenuLayout.remove_child(orig_indicator)
+    dateMenuLayout.remove_child(orig_indicator);
 
     // Create new indicator
     count_indicator = new MessageCounterIndicator();
@@ -133,7 +133,7 @@ function disable() {
     dateMenuLayout.remove_child(old_pad);
     dateMenuLayout.remove_child(count_indicator);
     old_pad.destroy();
-    count_indicator.destroy()
+    count_indicator.destroy();
 
     // Add original indicator
     dateMenuLayout.add_child(orig_indicator);
