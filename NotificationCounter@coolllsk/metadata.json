@@ -1,8 +1,8 @@
 {
   "name": "Notification Counter",
-  "shell-version": ["3.36", "40", "42", "43", "44"],
+  "shell-version": ["45"],
   "description": "Shows number of notifications in queue.",
   "uuid": "NotificationCounter@coolllsk",
   "url": "https://github.com/vkrizan/NotificationCounter",
-  "version": "4"
+  "version": "5"
 }

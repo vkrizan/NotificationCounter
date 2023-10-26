@@ -1,11 +1,8 @@
-
-const GObject = imports.gi.GObject;
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const Main = imports.ui.main;
-const Lang = imports.lang;
-const MessagesIndicator = imports.ui.dateMenu.MessagesIndicator;
-const Urgency = imports.ui.messageTray.Urgency;
+import GObject from 'gi://GObject';
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 var MessageCounterIndicator = GObject.registerClass(
 class MessageCounterIndicator extends St.Label {
@@ -29,7 +26,7 @@ class MessageCounterIndicator extends St.Label {
         this._connectSignal(Main.messageTray, 'queue-changed', this._updateCount.bind(this));
 
         let sources = Main.messageTray.getSources();
-        sources.forEach(Lang.bind(this, function(source) { this._onSourceAdded(null, source); }));
+        sources.forEach((source) => this._onSourceAdded(null, source) );
 
         this.connect('destroy', this._onDestroy.bind(this));
     }
@@ -53,16 +50,15 @@ class MessageCounterIndicator extends St.Label {
     _updateCount() {
         let count = 0;
         let label;
-        this._getSources().forEach(Lang.bind(this,
-            function(source) {
+        this._getSources().forEach((source) => {
                 for (let i=0; i < source.notifications.length; i++) {
                     let notification = source.notifications[i];
-                    if (notification.urgency >= Urgency.NORMAL) {
+                    if (notification.urgency >= MessageTray.Urgency.NORMAL) {
                         // increment counter
                         count++;
                     }
                 }
-            }));
+            });
 
         if (count > 10) {
             // Limit count
@@ -88,64 +84,61 @@ class MessageCounterIndicator extends St.Label {
 });
 
 
-let count_indicator, orig_indicator, dateMenu;
-
-function init() {
-}
-
-function enable() {
-    dateMenu = Main.panel.statusArea.dateMenu;
-    let dateMenuLayout = dateMenu.get_children()[0];
+export default class MessageCounterIndicatorExtension {
+enable() {
+    this.dateMenu = Main.panel.statusArea.dateMenu;
+    let dateMenuLayout = this.dateMenu.get_children()[0];
     let actors = dateMenuLayout.get_children();
     let orig_pad = actors[0];
-    orig_indicator = dateMenu._indicator;
+    this.orig_indicator = this.dateMenu._indicator;
 
     // Remove original pad
     dateMenuLayout.remove_child(orig_pad);
     orig_pad.destroy();
 
     // Remove original indicator
-    dateMenuLayout.remove_child(orig_indicator);
+    dateMenuLayout.remove_child(this.orig_indicator);
 
     // Create new indicator
-    count_indicator = new MessageCounterIndicator();
-    dateMenu._indicator = count_indicator;
+    this.count_indicator = new MessageCounterIndicator();
+    this.dateMenu._indicator = this.count_indicator;
 
     // Add it with pad and constraint
     // Have to create a new one, to unbind with original pad.
     let pad = new St.Widget();
-    count_indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
+    this.count_indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
     pad.add_constraint(new Clutter.BindConstraint({
-        source: count_indicator,
+        source: this.count_indicator,
         coordinate: Clutter.BindCoordinate.SIZE,
     }));
 
-    dateMenuLayout.add_child(count_indicator);
+    dateMenuLayout.add_child(this.count_indicator);
     dateMenuLayout.add_child(pad);
     dateMenuLayout.set_child_at_index(pad, 0);
 }
 
-function disable() {
-    let dateMenuLayout = dateMenu.get_children()[0];
+disable() {
+    let dateMenuLayout = this.dateMenu.get_children()[0];
     let old_pad = dateMenuLayout.get_children()[0];
 
     // Remove
     dateMenuLayout.remove_child(old_pad);
-    dateMenuLayout.remove_child(count_indicator);
+    dateMenuLayout.remove_child(this.count_indicator);
     old_pad.destroy();
-    count_indicator.destroy();
+    this.count_indicator.destroy();
 
     // Add original indicator
-    dateMenuLayout.add_child(orig_indicator);
-    dateMenu._indicator = orig_indicator;
+    dateMenuLayout.add_child(this.orig_indicator);
+    this.dateMenu._indicator = this.orig_indicator;
 
     // add the pad and constraint back
     let pad = new St.Widget();
-    dateMenu._indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
+    this.dateMenu._indicator.bind_property('visible', pad, 'visible', GObject.BindingFlags.SYNC_CREATE);
     pad.add_constraint(new Clutter.BindConstraint({
-        source: orig_indicator,
+        source: this.orig_indicator,
         coordinate: Clutter.BindCoordinate.SIZE,
     }));
     dateMenuLayout.add_child(pad);
     dateMenuLayout.set_child_at_index(pad, 0);
+}
 }
