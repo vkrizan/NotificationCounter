@@ -32,13 +32,17 @@ class MessageCounterIndicator extends St.Label {
     }
 
     _onSourceAdded(tray, source) {
-        let sourceSignal = source.connect('notify::count', this._updateCount.bind(this));
-        this._sources.set(source, sourceSignal);
+        const sourceSignals = [
+            source.connect('notify::count', this._updateCount.bind(this)),
+            source.connect('notification-added', this._updateCount.bind(this)),
+            source.connect('notification-removed', this._updateCount.bind(this))
+        ];
+        this._sources.set(source, sourceSignals);
         this._updateCount();
     }
 
     _onSourceRemoved(tray, source) {
-        source.disconnect(this._sources.get(source));
+        this._sources.get(source).forEach((sig) => source.disconnect(sig));
         this._sources.delete(source);
         this._updateCount();
     }
@@ -78,7 +82,7 @@ class MessageCounterIndicator extends St.Label {
 
     _onDestroy() {
         this._signals.forEach( (sig) => sig[0].disconnect(sig[1]) );
-        this._sources.forEach( (sig, source) => source.disconnect(sig) );
+        this._sources.forEach( (sigs, source) => sigs.forEach((sig) => source.disconnect(sig) ));
     }
 
 });
