@@ -57,7 +57,8 @@ class MessageCounterIndicator extends St.Label {
         this._getSources().forEach((source) => {
                 for (let i=0; i < source.notifications.length; i++) {
                     let notification = source.notifications[i];
-                    if (notification.urgency >= MessageTray.Urgency.NORMAL) {
+                    if (notification.urgency >= MessageTray.Urgency.NORMAL
+                            && !notification.isTransient) {
                         // increment counter
                         count++;
                     }
