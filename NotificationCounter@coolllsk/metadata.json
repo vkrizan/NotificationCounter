@@ -2,7 +2,8 @@
   "name": "Notification Counter",
   "shell-version": [
     "46",
-    "47"
+    "47",
+    "48"
   ],
   "description": "Shows number of notifications in queue.",
   "uuid": "NotificationCounter@coolllsk",
