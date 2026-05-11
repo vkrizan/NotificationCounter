@@ -131,6 +131,7 @@ disable() {
     dateMenuLayout.remove_child(this.count_indicator);
     old_pad.destroy();
     this.count_indicator.destroy();
+    this.count_indicator = undefined;
 
     // Add original indicator
     dateMenuLayout.add_child(this.orig_indicator);
